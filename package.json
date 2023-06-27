@@ -1,6 +1,6 @@
 {
   "name": "typescript-action",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "private": true,
   "description": "TypeScript template action",
   "main": "lib/main.js",
@@ -15,17 +15,19 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/actions/typescript-action.git"
+    "url": "git+https://github.com/thechrisjohnson/terraform-cloud-provider-publish"
   },
   "keywords": [
     "actions",
-    "node",
-    "setup"
+    "terraform"
   ],
-  "author": "",
+  "author": "Chris Johnson",
   "license": "MIT",
   "dependencies": {
-    "@actions/core": "^1.10.0"
+    "@actions/core": "^1.10.0",
+    "@actions/exec": "^1.1.1",
+    "@actions/http-client": "^2.1.0",
+    "@actions/io": "^1.1.3"
   },
   "devDependencies": {
     "@types/node": "^20.3.1",

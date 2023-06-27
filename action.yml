@@ -1,11 +1,20 @@
-name: 'Your name here'
-description: 'Provide a description here'
-author: 'Your name or organization here'
+name: 'Terraform Cloud Private Provider Publish'
+description: 'Publish a terraform provider to a private repository'
+author: 'Chris Johnson'
 inputs:
-  milliseconds: # change this
+  organization-name:
     required: true
-    description: 'input description here'
-    default: 'default value if applicable'
+    description: 'name of the terraform cloud organization'
+  organization-key:
+    required: true
+    description: 'access key needed to access the organizations registry'
+  provider-directory:
+    required: true
+    description: 'the folder containing all of the files that make up a provider'
+    default: '.'
+  gpg-key:
+    required: true
+    description: 'the ascii armored public key used to sign the provider'
 runs:
   using: 'node16'
   main: 'dist/index.js'
