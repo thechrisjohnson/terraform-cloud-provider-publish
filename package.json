@@ -1,8 +1,8 @@
 {
-  "name": "typescript-action",
+  "name": "terraform-cloud-provider-publish-action",
   "version": "1.0.0",
   "private": true,
-  "description": "TypeScript template action",
+  "description": "An action to publish a terraform provider to a private registry",
   "main": "lib/main.js",
   "scripts": {
     "build": "tsc",
