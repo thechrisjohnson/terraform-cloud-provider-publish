@@ -53,9 +53,9 @@ function run() {
             const providerDirName = core.getInput('provider-directory');
             const gpgKey = core.getInput('gpg-key');
             // Figure out the path for the provider
-            let githubWorkspacePath = process.env["GITHUB_WORKSPACE"];
+            let githubWorkspacePath = process.env['GITHUB_WORKSPACE'];
             if (!githubWorkspacePath) {
-                throw new Error("$GITHUB_WORKSPACE not defined");
+                throw new Error('$GITHUB_WORKSPACE not defined');
             }
             githubWorkspacePath = path.resolve(githubWorkspacePath);
             const providerDir = path.resolve(githubWorkspacePath, providerDirName);
