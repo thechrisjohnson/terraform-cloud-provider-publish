@@ -63,9 +63,7 @@ function run() {
             const tfClient = new terraform_1.TerraformClient(organizationName, organizationKey);
             // Find the *manifest.json file, and calculate the required values from there
             const providerFiles = yield fs.readdir(providerDir);
-            const manifestFile = providerFiles.find(value => {
-                value.endsWith('manifest.json');
-            });
+            const manifestFile = providerFiles.find(value => value.endsWith('manifest.json'));
             if (manifestFile === undefined) {
                 throw new Error(`Unable to find manifest file in ${providerDir}`);
             }
