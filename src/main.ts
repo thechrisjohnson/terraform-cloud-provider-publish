@@ -25,9 +25,9 @@ async function run(): Promise<void> {
 
     // Find the *manifest.json file, and calculate the required values from there
     const providerFiles = await fs.readdir(providerDir)
-    const manifestFile = providerFiles.find(value => {
+    const manifestFile = providerFiles.find(value =>
       value.endsWith('manifest.json')
-    })
+    )
     if (manifestFile === undefined) {
       throw new Error(`Unable to find manifest file in ${providerDir}`)
     }
