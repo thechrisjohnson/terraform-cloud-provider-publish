@@ -9,8 +9,16 @@ async function run(): Promise<void> {
     // Load configuration
     const organizationName: string = core.getInput('organization-name')
     const organizationKey: string = core.getInput('organization-key')
-    const providerDir: string = core.getInput('provider-directory')
+    const providerDirName: string = core.getInput('provider-directory')
     const gpgKey: string = core.getInput('gpg-key')
+
+    // Figure out the path for the provider
+    let githubWorkspacePath = process.env['GITHUB_WORKSPACE']
+    if (!githubWorkspacePath) {
+      throw new Error('$GITHUB_WORKSPACE not defined')
+    }
+    githubWorkspacePath = path.resolve(githubWorkspacePath)
+    const providerDir = path.resolve(githubWorkspacePath, providerDirName)
 
     // Create the terraform client
     const tfClient = new TerraformClient(organizationName, organizationKey)

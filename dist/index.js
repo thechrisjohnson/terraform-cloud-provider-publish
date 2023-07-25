@@ -50,8 +50,15 @@ function run() {
             // Load configuration
             const organizationName = core.getInput('organization-name');
             const organizationKey = core.getInput('organization-key');
-            const providerDir = core.getInput('provider-directory');
+            const providerDirName = core.getInput('provider-directory');
             const gpgKey = core.getInput('gpg-key');
+            // Figure out the path for the provider
+            let githubWorkspacePath = process.env["GITHUB_WORKSPACE"];
+            if (!githubWorkspacePath) {
+                throw new Error("$GITHUB_WORKSPACE not defined");
+            }
+            githubWorkspacePath = path.resolve(githubWorkspacePath);
+            const providerDir = path.resolve(githubWorkspacePath, providerDirName);
             // Create the terraform client
             const tfClient = new terraform_1.TerraformClient(organizationName, organizationKey);
             // Find the *manifest.json file, and calculate the required values from there
