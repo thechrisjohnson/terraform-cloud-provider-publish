@@ -136,7 +136,8 @@ function run() {
                     continue;
                 }
                 const os = fileParts[2];
-                const arch = fileParts[3];
+                // TODO: Remove the .zip in a better way in the future
+                const arch = fileParts[3].substring(0, fileParts[3].length - 4);
                 core.info(`Checking to see if platform ${os}_${arch} for ${providerName} ${providerVersion} already exists`);
                 const existingPlatforms = yield tfClient.getAllProviderPlatforms(providerName, providerVersion);
                 let platform = (_b = existingPlatforms.data) === null || _b === void 0 ? void 0 : _b.find(plat => plat.attributes.os === os && plat.attributes.arch === arch);

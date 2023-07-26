@@ -134,7 +134,8 @@ async function run(): Promise<void> {
       }
 
       const os = fileParts[2]
-      const arch = fileParts[3]
+      // TODO: Remove the .zip in a better way in the future
+      const arch = fileParts[3].substring(0, fileParts[3].length - 4)
 
       core.info(
         `Checking to see if platform ${os}_${arch} for ${providerName} ${providerVersion} already exists`
