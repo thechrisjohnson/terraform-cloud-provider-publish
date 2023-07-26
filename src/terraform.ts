@@ -5,18 +5,18 @@ function GenerateGetProviderUrl(
   organizationName: string,
   providerName: string
 ): string {
-  return `https://app.terraform.io/organizations/${organizationName}/registry-providers/private/${organizationName}/${providerName}`
+  return `https://app.terraform.io/api/v2/organizations/${organizationName}/registry-providers/private/${organizationName}/${providerName}`
 }
 
 function GeneratePostProviderUrl(organizationName: string): string {
-  return `https://app.terraform.io/organizations/${organizationName}/registry-providers`
+  return `https://app.terraform.io/api/v2/organizations/${organizationName}/registry-providers`
 }
 
 function GeneratePostProviderVersionUrl(
   organizationName: string,
   providerName: string
 ): string {
-  return `https://app.terraform.io/organizations/${organizationName}/registry-providers/private/${organizationName}/${providerName}/versions`
+  return `https://app.terraform.io/api/v2/organizations/${organizationName}/registry-providers/private/${organizationName}/${providerName}/versions`
 }
 
 function GeneratePostProviderPlatformUrl(
@@ -24,7 +24,7 @@ function GeneratePostProviderPlatformUrl(
   providerName: string,
   version: string
 ): string {
-  return `https://app.terraform.io/organizations/${organizationName}/registry-providers/private/${organizationName}/${providerName}/versions/${version}/platforms`
+  return `https://app.terraform.io/api/v2/organizations/${organizationName}/registry-providers/private/${organizationName}/${providerName}/versions/${version}/platforms`
 }
 
 export class TerraformClient {
@@ -33,9 +33,11 @@ export class TerraformClient {
 
   constructor(organizationName: string, organizationKey: string) {
     this.organizationName = organizationName
-    this.httpClient = new HttpClient('Publish Private Provider Action', [
-      new BearerCredentialHandler(organizationKey)
-    ])
+    this.httpClient = new HttpClient(
+      'Publish Private Provider Action',
+      [new BearerCredentialHandler(organizationKey)],
+      {headers: {'Content-Type': 'application/vnd.api+json'}}
+    )
   }
 
   async getProvider(providerName: string): Promise<TerraformProvider | null> {
