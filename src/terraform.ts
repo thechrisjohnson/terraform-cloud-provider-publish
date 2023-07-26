@@ -12,6 +12,10 @@ function GeneratePostProviderUrl(organizationName: string): string {
   return `https://app.terraform.io/api/v2/organizations/${organizationName}/registry-providers`
 }
 
+function GenerateGetGpgKeysUrl(organizationName: string): string {
+  return `https://app.terraform.io/api/registry/private/v2/gpg-keys?filter[namespace]=${organizationName}`
+}
+
 function GeneratePostProviderVersionUrl(
   organizationName: string,
   providerName: string
@@ -68,6 +72,14 @@ export class TerraformClient {
     }
 
     return response.result.data
+  }
+
+  async getAllSigningKeys(): Promise<TerraformSigningKeyList | null> {
+    const response = await this.httpClient.getJson<TerraformSigningKeyList>(
+      GenerateGetGpgKeysUrl(this.organizationName)
+    )
+
+    return response.result
   }
 
   async postSingingKey(asciiArmor: string): Promise<TerraformSigningKey> {
@@ -215,6 +227,32 @@ export interface TerraformSigningKeyAttributes {
   'source-url': string
   'trust-signature': string
   'updated-at': string
+}
+
+export interface TerraformSigningKeyList {
+  data: TerraformSigningKey[]
+  links: TerraformSigningKeyListLinks
+  meta: TerraformSigningKeyListMetadata
+}
+
+export interface TerraformSigningKeyListLinks {
+  first: string
+  last: string
+  next: string
+  prev: string
+}
+
+export interface TerraformSigningKeyListMetadata {
+  pagination: TerraformSigningKeyListPagination
+}
+
+export interface TerraformSigningKeyListPagination {
+  'page-size': number
+  'current-page': number
+  'next-page': number
+  'prev-page': number
+  'total-pages': number
+  'total-count': number
 }
 
 export interface TerraformProviderVersion {

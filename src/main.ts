@@ -57,8 +57,15 @@ async function run(): Promise<void> {
       provider = await tfClient.postProvider(providerName)
     }
 
-    core.info(`Ensuring gpg key exists...`)
-    const signingKey = await tfClient.postSingingKey(gpgKey)
+    core.info(`Checking to see if gpg key exists...`)
+    const existingKeys = await tfClient.getAllSigningKeys()
+    let signingKey = existingKeys?.data.find(
+      key => key.attributes['ascii-armor'] === gpgKey
+    )
+    if (signingKey == null) {
+      core.info(`Gpg key does not exist, creating...`)
+      signingKey = await tfClient.postSingingKey(gpgKey)
+    }
 
     core.info(`Creating new provider version ${providerVersion}`)
     const version = await tfClient.postProviderVersion(

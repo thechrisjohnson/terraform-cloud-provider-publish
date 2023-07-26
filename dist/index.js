@@ -84,8 +84,13 @@ function run() {
                 core.info(`Provider did not exist, creating ${organizationName}/${providerName}...`);
                 provider = yield tfClient.postProvider(providerName);
             }
-            core.info(`Ensuring gpg key exists...`);
-            const signingKey = yield tfClient.postSingingKey(gpgKey);
+            core.info(`Checking to see if gpg key exists...`);
+            const existingKeys = yield tfClient.getAllSigningKeys();
+            let signingKey = existingKeys === null || existingKeys === void 0 ? void 0 : existingKeys.data.find(key => key.attributes['ascii-armor'] === gpgKey);
+            if (signingKey == null) {
+                core.info(`Gpg key does not exist, creating...`);
+                signingKey = yield tfClient.postSingingKey(gpgKey);
+            }
             core.info(`Creating new provider version ${providerVersion}`);
             const version = yield tfClient.postProviderVersion(providerName, providerVersion, providerProtocols, signingKey.id);
             core.info(`Uploading sha256 and sig files...`);
@@ -180,6 +185,9 @@ function GenerateGetProviderUrl(organizationName, providerName) {
 function GeneratePostProviderUrl(organizationName) {
     return `https://app.terraform.io/api/v2/organizations/${organizationName}/registry-providers`;
 }
+function GenerateGetGpgKeysUrl(organizationName) {
+    return `https://app.terraform.io/api/registry/private/v2/gpg-keys?filter[namespace]=${organizationName}`;
+}
 function GeneratePostProviderVersionUrl(organizationName, providerName) {
     return `https://app.terraform.io/api/v2/organizations/${organizationName}/registry-providers/private/${organizationName}/${providerName}/versions`;
 }
@@ -215,6 +223,12 @@ class TerraformClient {
                 throw new Error(`Invalid reponse code: ${response.statusCode}`);
             }
             return response.result.data;
+        });
+    }
+    getAllSigningKeys() {
+        return __awaiter(this, void 0, void 0, function* () {
+            const response = yield this.httpClient.getJson(GenerateGetGpgKeysUrl(this.organizationName));
+            return response.result;
         });
     }
     postSingingKey(asciiArmor) {
