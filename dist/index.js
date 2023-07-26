@@ -119,9 +119,12 @@ function run() {
             const platformsBuffer = yield fs.readFile(sumFile);
             const platforms = platformsBuffer.toString();
             for (const line of platforms.split('\n')) {
-                const lineParts = line.split(' ');
+                const lineParts = line
+                    .trim()
+                    .split(' ')
+                    .filter(word => word.trim() !== '');
                 if (lineParts.length !== 2) {
-                    throw new Error(`Invalid sha256sums file ${sumFile}`);
+                    core.info(`Skipping line ${line}`);
                 }
                 const shasum = lineParts[0];
                 const file = lineParts[1];
@@ -166,7 +169,7 @@ function uploadFile(url, filePath) {
             }
         };
         // This is just laziness, as I didn't want to write a multipart uploader using basic node
-        core.debug(`Uploading file: ${filePath}`);
+        core.info(`Uploading file: ${filePath}`);
         yield exec.exec('curl', ['-s', '-S', '-T', filePath, url], options);
         if (error !== '') {
             throw new Error(error);
