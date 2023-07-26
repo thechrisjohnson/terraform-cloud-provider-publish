@@ -59,7 +59,7 @@ async function run(): Promise<void> {
 
     core.info(`Checking to see if gpg key exists...`)
     const existingKeys = await tfClient.getAllSigningKeys()
-    let signingKey = existingKeys?.data.find(
+    let signingKey = existingKeys.data?.find(
       key => key.attributes['ascii-armor'] === gpgKey
     )
     if (signingKey == null) {
@@ -77,12 +77,12 @@ async function run(): Promise<void> {
 
     core.info(`Uploading sha256 and sig files...`)
     // Take the output folder for all of the files and look for a SHA256SUM and SHA256SUM.sig
-    const sumFileBase = providerFiles.find(value => {
+    const sumFileBase = providerFiles.find(value =>
       value.endsWith('SHA256SUMS')
-    })
-    const signatureFileBase = providerFiles.find(value => {
+    )
+    const signatureFileBase = providerFiles.find(value =>
       value.endsWith('SHA256SUMS.sig')
-    })
+    )
     if (sumFileBase === undefined || signatureFileBase === undefined) {
       throw new Error('Unable to find sum file and/or signature file')
     }
@@ -117,20 +117,38 @@ async function run(): Promise<void> {
       const arch = fileParts[3]
 
       core.info(
-        `Creating platform ${os}_${arch} for ${providerName} ${providerVersion}`
+        `Checking to see if platform ${os}_${arch} for ${providerName} ${providerVersion} already exists`
       )
-      const platform = await tfClient.postProviderPlatform(
+      const existingPlatforms = await tfClient.getAllProviderPlatforms(
         providerName,
-        providerVersion,
-        os,
-        arch,
-        shasum,
-        file
+        providerVersion
       )
-      await uploadFile(
-        platform.links['provider-binary-upload'],
-        path.join(providerDir, file)
+
+      let platform = existingPlatforms.data?.find(
+        plat => plat.attributes.os === os && plat.attributes.arch === arch
       )
+      if (platform == null) {
+        core.info(
+          `Creating platform ${os}_${arch} for ${providerName} ${providerVersion}`
+        )
+        platform = await tfClient.postProviderPlatform(
+          providerName,
+          providerVersion,
+          os,
+          arch,
+          shasum,
+          file
+        )
+      }
+
+      if (platform.attributes['provider-binary-uploaded'] === true) {
+        core.info(`File ${file} already uploaded`)
+      } else {
+        await uploadFile(
+          platform.links['provider-binary-upload'],
+          path.join(providerDir, file)
+        )
+      }
     }
   } catch (error) {
     if (error instanceof Error) core.setFailed(error.message)

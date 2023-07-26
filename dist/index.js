@@ -45,6 +45,7 @@ const core = __importStar(__nccwpck_require__(186));
 const exec = __importStar(__nccwpck_require__(514));
 const terraform_1 = __nccwpck_require__(620);
 function run() {
+    var _a, _b;
     return __awaiter(this, void 0, void 0, function* () {
         try {
             // Load configuration
@@ -86,7 +87,7 @@ function run() {
             }
             core.info(`Checking to see if gpg key exists...`);
             const existingKeys = yield tfClient.getAllSigningKeys();
-            let signingKey = existingKeys === null || existingKeys === void 0 ? void 0 : existingKeys.data.find(key => key.attributes['ascii-armor'] === gpgKey);
+            let signingKey = (_a = existingKeys.data) === null || _a === void 0 ? void 0 : _a.find(key => key.attributes['ascii-armor'] === gpgKey);
             if (signingKey == null) {
                 core.info(`Gpg key does not exist, creating...`);
                 signingKey = yield tfClient.postSingingKey(gpgKey);
@@ -95,12 +96,8 @@ function run() {
             const version = yield tfClient.postProviderVersion(providerName, providerVersion, providerProtocols, signingKey.id);
             core.info(`Uploading sha256 and sig files...`);
             // Take the output folder for all of the files and look for a SHA256SUM and SHA256SUM.sig
-            const sumFileBase = providerFiles.find(value => {
-                value.endsWith('SHA256SUMS');
-            });
-            const signatureFileBase = providerFiles.find(value => {
-                value.endsWith('SHA256SUMS.sig');
-            });
+            const sumFileBase = providerFiles.find(value => value.endsWith('SHA256SUMS'));
+            const signatureFileBase = providerFiles.find(value => value.endsWith('SHA256SUMS.sig'));
             if (sumFileBase === undefined || signatureFileBase === undefined) {
                 throw new Error('Unable to find sum file and/or signature file');
             }
@@ -127,9 +124,19 @@ function run() {
                 }
                 const os = fileParts[2];
                 const arch = fileParts[3];
-                core.info(`Creating platform ${os}_${arch} for ${providerName} ${providerVersion}`);
-                const platform = yield tfClient.postProviderPlatform(providerName, providerVersion, os, arch, shasum, file);
-                yield uploadFile(platform.links['provider-binary-upload'], path.join(providerDir, file));
+                core.info(`Checking to see if platform ${os}_${arch} for ${providerName} ${providerVersion} already exists`);
+                const existingPlatforms = yield tfClient.getAllProviderPlatforms(providerName, providerVersion);
+                let platform = (_b = existingPlatforms.data) === null || _b === void 0 ? void 0 : _b.find(plat => plat.attributes.os === os && plat.attributes.arch === arch);
+                if (platform == null) {
+                    core.info(`Creating platform ${os}_${arch} for ${providerName} ${providerVersion}`);
+                    platform = yield tfClient.postProviderPlatform(providerName, providerVersion, os, arch, shasum, file);
+                }
+                if (platform.attributes['provider-binary-uploaded'] === true) {
+                    core.info(`File ${file} already uploaded`);
+                }
+                else {
+                    yield uploadFile(platform.links['provider-binary-upload'], path.join(providerDir, file));
+                }
             }
         }
         catch (error) {
@@ -191,7 +198,7 @@ function GenerateGetGpgKeysUrl(organizationName) {
 function GeneratePostProviderVersionUrl(organizationName, providerName) {
     return `https://app.terraform.io/api/v2/organizations/${organizationName}/registry-providers/private/${organizationName}/${providerName}/versions`;
 }
-function GeneratePostProviderPlatformUrl(organizationName, providerName, version) {
+function GenerateProviderPlatformUrl(organizationName, providerName, version) {
     return `https://app.terraform.io/api/v2/organizations/${organizationName}/registry-providers/private/${organizationName}/${providerName}/versions/${version}/platforms`;
 }
 class TerraformClient {
@@ -228,6 +235,9 @@ class TerraformClient {
     getAllSigningKeys() {
         return __awaiter(this, void 0, void 0, function* () {
             const response = yield this.httpClient.getJson(GenerateGetGpgKeysUrl(this.organizationName));
+            if (response.result == null) {
+                throw new Error(`Invalid response code: ${response.statusCode}`);
+            }
             return response.result;
         });
     }
@@ -268,6 +278,15 @@ class TerraformClient {
             return response.result.data;
         });
     }
+    getAllProviderPlatforms(providerName, version) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const response = yield this.httpClient.getJson(GenerateProviderPlatformUrl(this.organizationName, providerName, version));
+            if (response.result == null) {
+                throw new Error(`Invalid response code: ${response.statusCode}`);
+            }
+            return response.result;
+        });
+    }
     postProviderPlatform(providerName, version, os, arch, shasum, filename) {
         return __awaiter(this, void 0, void 0, function* () {
             const body = {
@@ -281,7 +300,7 @@ class TerraformClient {
                     }
                 }
             };
-            const response = yield this.httpClient.postJson(GeneratePostProviderPlatformUrl(this.organizationName, providerName, version), body);
+            const response = yield this.httpClient.postJson(GenerateProviderPlatformUrl(this.organizationName, providerName, version), body);
             if (response.result == null) {
                 throw new Error(`Invalid response code: ${response.statusCode}`);
             }

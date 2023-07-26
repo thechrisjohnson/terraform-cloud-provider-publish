@@ -23,7 +23,7 @@ function GeneratePostProviderVersionUrl(
   return `https://app.terraform.io/api/v2/organizations/${organizationName}/registry-providers/private/${organizationName}/${providerName}/versions`
 }
 
-function GeneratePostProviderPlatformUrl(
+function GenerateProviderPlatformUrl(
   organizationName: string,
   providerName: string,
   version: string
@@ -74,10 +74,13 @@ export class TerraformClient {
     return response.result.data
   }
 
-  async getAllSigningKeys(): Promise<TerraformSigningKeyList | null> {
-    const response = await this.httpClient.getJson<TerraformSigningKeyList>(
-      GenerateGetGpgKeysUrl(this.organizationName)
-    )
+  async getAllSigningKeys(): Promise<PaginatedList<TerraformSigningKey>> {
+    const response = await this.httpClient.getJson<
+      PaginatedList<TerraformSigningKey>
+    >(GenerateGetGpgKeysUrl(this.organizationName))
+    if (response.result == null) {
+      throw new Error(`Invalid response code: ${response.statusCode}`)
+    }
 
     return response.result
   }
@@ -130,6 +133,20 @@ export class TerraformClient {
     return response.result.data
   }
 
+  async getAllProviderPlatforms(
+    providerName: string,
+    version: string
+  ): Promise<PaginatedList<TerraformProviderPlatform>> {
+    const response = await this.httpClient.getJson<
+      PaginatedList<TerraformProviderPlatform>
+    >(GenerateProviderPlatformUrl(this.organizationName, providerName, version))
+    if (response.result == null) {
+      throw new Error(`Invalid response code: ${response.statusCode}`)
+    }
+
+    return response.result
+  }
+
   async postProviderPlatform(
     providerName: string,
     version: string,
@@ -153,11 +170,7 @@ export class TerraformClient {
     const response = await this.httpClient.postJson<
       DataWrappedValue<TerraformProviderPlatform>
     >(
-      GeneratePostProviderPlatformUrl(
-        this.organizationName,
-        providerName,
-        version
-      ),
+      GenerateProviderPlatformUrl(this.organizationName, providerName, version),
       body
     )
     if (response.result == null) {
@@ -170,6 +183,32 @@ export class TerraformClient {
 
 export interface DataWrappedValue<T> {
   data: T
+}
+
+export interface PaginatedList<T> {
+  data: T[]
+  links: PaginatedListLinks
+  meta: PaginatedListMetadata
+}
+
+export interface PaginatedListLinks {
+  first: string
+  last: string
+  next: string
+  prev: string
+}
+
+export interface PaginatedListMetadata {
+  pagination: PaginatedListPagination
+}
+
+export interface PaginatedListPagination {
+  'page-size': number
+  'current-page': number
+  'next-page': number
+  'prev-page': number
+  'total-pages': number
+  'total-count': number
 }
 
 export interface TerraformProvider {
@@ -227,32 +266,6 @@ export interface TerraformSigningKeyAttributes {
   'source-url': string
   'trust-signature': string
   'updated-at': string
-}
-
-export interface TerraformSigningKeyList {
-  data: TerraformSigningKey[]
-  links: TerraformSigningKeyListLinks
-  meta: TerraformSigningKeyListMetadata
-}
-
-export interface TerraformSigningKeyListLinks {
-  first: string
-  last: string
-  next: string
-  prev: string
-}
-
-export interface TerraformSigningKeyListMetadata {
-  pagination: TerraformSigningKeyListPagination
-}
-
-export interface TerraformSigningKeyListPagination {
-  'page-size': number
-  'current-page': number
-  'next-page': number
-  'prev-page': number
-  'total-pages': number
-  'total-count': number
 }
 
 export interface TerraformProviderVersion {
