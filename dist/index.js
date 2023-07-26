@@ -189,9 +189,8 @@ function GeneratePostProviderPlatformUrl(organizationName, providerName, version
 class TerraformClient {
     constructor(organizationName, organizationKey) {
         this.organizationName = organizationName;
-        const bearerHandler = new auth_1.BearerCredentialHandler(organizationKey);
         this.httpClient = new http_client_1.HttpClient('Publish Private Provider Action', [
-            bearerHandler
+            new auth_1.BearerCredentialHandler(organizationKey)
         ]);
     }
     getProvider(providerName) {
