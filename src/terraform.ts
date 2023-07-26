@@ -33,9 +33,8 @@ export class TerraformClient {
 
   constructor(organizationName: string, organizationKey: string) {
     this.organizationName = organizationName
-    const bearerHandler = new BearerCredentialHandler(organizationKey)
     this.httpClient = new HttpClient('Publish Private Provider Action', [
-      bearerHandler
+      new BearerCredentialHandler(organizationKey)
     ])
   }
 
