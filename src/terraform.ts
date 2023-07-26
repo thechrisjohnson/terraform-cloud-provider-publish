@@ -100,9 +100,11 @@ export class TerraformClient {
     const body = {
       data: {
         type: 'registry-provider-versions',
-        version,
-        'key-id': keyId,
-        protocols: supportedProtocols
+        attributes: {
+          version,
+          'key-id': keyId,
+          protocols: supportedProtocols
+        }
       }
     }
 
