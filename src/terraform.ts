@@ -16,6 +16,14 @@ function GenerateGetGpgKeysUrl(organizationName: string): string {
   return `https://app.terraform.io/api/registry/private/v2/gpg-keys?filter[namespace]=${organizationName}`
 }
 
+function GenerateGetProviderVersionUrl(
+  organizationName: string,
+  providerName: string,
+  version: string
+): string {
+  return `https://app.terraform.io/api/v2/organizations/${organizationName}/registry-providers/private/${organizationName}/${providerName}/versions/${version}`
+}
+
 function GeneratePostProviderVersionUrl(
   organizationName: string,
   providerName: string
@@ -104,6 +112,23 @@ export class TerraformClient {
     }
 
     return response.result.data
+  }
+
+  async getProviderVersion(
+    providerName: string,
+    version: string
+  ): Promise<TerraformProviderVersion | null> {
+    const response = await this.httpClient.getJson<
+      DataWrappedValue<TerraformProviderVersion>
+    >(
+      GenerateGetProviderVersionUrl(
+        this.organizationName,
+        providerName,
+        version
+      )
+    )
+
+    return response.result?.data ?? null
   }
 
   async postProviderVersion(

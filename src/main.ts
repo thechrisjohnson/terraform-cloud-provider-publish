@@ -67,15 +67,23 @@ async function run(): Promise<void> {
       signingKey = await tfClient.postSingingKey(gpgKey)
     }
 
-    core.info(`Creating new provider version ${providerVersion}`)
-    const version = await tfClient.postProviderVersion(
-      providerName,
-      providerVersion,
-      providerProtocols,
-      signingKey.id
+    core.info(
+      `Checking to see if provider version ${providerVersion} exists...`
     )
+    let version = await tfClient.getProviderVersion(
+      providerName,
+      providerVersion
+    )
+    if (version == null) {
+      core.info(`Creating new provider version ${providerVersion}`)
+      version = await tfClient.postProviderVersion(
+        providerName,
+        providerVersion,
+        providerProtocols,
+        signingKey.id
+      )
+    }
 
-    core.info(`Uploading sha256 and sig files...`)
     // Take the output folder for all of the files and look for a SHA256SUM and SHA256SUM.sig
     const sumFileBase = providerFiles.find(value =>
       value.endsWith('SHA256SUMS')
@@ -86,11 +94,20 @@ async function run(): Promise<void> {
     if (sumFileBase === undefined || signatureFileBase === undefined) {
       throw new Error('Unable to find sum file and/or signature file')
     }
+
     const sumFile = path.join(providerDir, sumFileBase)
     const signatureFile = path.join(providerDir, signatureFileBase)
 
-    await uploadFile(version.links['shasums-upload'], sumFile)
-    await uploadFile(version.links['shasums-sig-upload'], signatureFile)
+    // If we need to upload the signature or sum files, do that
+    core.info(`Checking if we need to upload sha256 file...`)
+    if (version.attributes['shasums-uploaded'] === false) {
+      await uploadFile(version.links['shasums-upload'], sumFile)
+    }
+
+    core.info(`Checking if we need to upload sig file...`)
+    if (version.attributes['shasums-sig-uploaded'] === false) {
+      await uploadFile(version.links['shasums-sig-upload'], signatureFile)
+    }
 
     // Read the shasums file and upload platforms based on that
     const platformsBuffer = await fs.readFile(sumFile)

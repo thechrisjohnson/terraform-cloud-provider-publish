@@ -92,9 +92,12 @@ function run() {
                 core.info(`Gpg key does not exist, creating...`);
                 signingKey = yield tfClient.postSingingKey(gpgKey);
             }
-            core.info(`Creating new provider version ${providerVersion}`);
-            const version = yield tfClient.postProviderVersion(providerName, providerVersion, providerProtocols, signingKey.id);
-            core.info(`Uploading sha256 and sig files...`);
+            core.info(`Checking to see if provider version ${providerVersion} exists...`);
+            let version = yield tfClient.getProviderVersion(providerName, providerVersion);
+            if (version == null) {
+                core.info(`Creating new provider version ${providerVersion}`);
+                version = yield tfClient.postProviderVersion(providerName, providerVersion, providerProtocols, signingKey.id);
+            }
             // Take the output folder for all of the files and look for a SHA256SUM and SHA256SUM.sig
             const sumFileBase = providerFiles.find(value => value.endsWith('SHA256SUMS'));
             const signatureFileBase = providerFiles.find(value => value.endsWith('SHA256SUMS.sig'));
@@ -103,8 +106,15 @@ function run() {
             }
             const sumFile = path.join(providerDir, sumFileBase);
             const signatureFile = path.join(providerDir, signatureFileBase);
-            yield uploadFile(version.links['shasums-upload'], sumFile);
-            yield uploadFile(version.links['shasums-sig-upload'], signatureFile);
+            // If we need to upload the signature or sum files, do that
+            core.info(`Checking if we need to upload sha256 file...`);
+            if (version.attributes['shasums-uploaded'] === false) {
+                yield uploadFile(version.links['shasums-upload'], sumFile);
+            }
+            core.info(`Checking if we need to upload sig file...`);
+            if (version.attributes['shasums-sig-uploaded'] === false) {
+                yield uploadFile(version.links['shasums-sig-upload'], signatureFile);
+            }
             // Read the shasums file and upload platforms based on that
             const platformsBuffer = yield fs.readFile(sumFile);
             const platforms = platformsBuffer.toString();
@@ -195,6 +205,9 @@ function GeneratePostProviderUrl(organizationName) {
 function GenerateGetGpgKeysUrl(organizationName) {
     return `https://app.terraform.io/api/registry/private/v2/gpg-keys?filter[namespace]=${organizationName}`;
 }
+function GenerateGetProviderVersionUrl(organizationName, providerName, version) {
+    return `https://app.terraform.io/api/v2/organizations/${organizationName}/registry-providers/private/${organizationName}/${providerName}/versions/${version}`;
+}
 function GeneratePostProviderVersionUrl(organizationName, providerName) {
     return `https://app.terraform.io/api/v2/organizations/${organizationName}/registry-providers/private/${organizationName}/${providerName}/versions`;
 }
@@ -257,6 +270,13 @@ class TerraformClient {
                 throw new Error(`Invalid response code: ${response.statusCode}`);
             }
             return response.result.data;
+        });
+    }
+    getProviderVersion(providerName, version) {
+        var _a, _b;
+        return __awaiter(this, void 0, void 0, function* () {
+            const response = yield this.httpClient.getJson(GenerateGetProviderVersionUrl(this.organizationName, providerName, version));
+            return (_b = (_a = response.result) === null || _a === void 0 ? void 0 : _a.data) !== null && _b !== void 0 ? _b : null;
         });
     }
     postProviderVersion(providerName, version, supportedProtocols, keyId) {
