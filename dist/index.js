@@ -167,7 +167,7 @@ function uploadFile(url, filePath) {
         };
         // This is just laziness, as I didn't want to write a multipart uploader using basic node
         core.debug(`Uploading file: ${filePath}`);
-        yield exec.exec('curl', ['-T', filePath, url], options);
+        yield exec.exec('curl', ['-s', '-S', '-T', filePath, url], options);
         if (error !== '') {
             throw new Error(error);
         }
