@@ -175,23 +175,21 @@ exports.TerraformClient = void 0;
 const http_client_1 = __nccwpck_require__(255);
 const auth_1 = __nccwpck_require__(526);
 function GenerateGetProviderUrl(organizationName, providerName) {
-    return `https://app.terraform.io/organizations/${organizationName}/registry-providers/private/${organizationName}/${providerName}`;
+    return `https://app.terraform.io/api/v2/organizations/${organizationName}/registry-providers/private/${organizationName}/${providerName}`;
 }
 function GeneratePostProviderUrl(organizationName) {
-    return `https://app.terraform.io/organizations/${organizationName}/registry-providers`;
+    return `https://app.terraform.io/api/v2/organizations/${organizationName}/registry-providers`;
 }
 function GeneratePostProviderVersionUrl(organizationName, providerName) {
-    return `https://app.terraform.io/organizations/${organizationName}/registry-providers/private/${organizationName}/${providerName}/versions`;
+    return `https://app.terraform.io/api/v2/organizations/${organizationName}/registry-providers/private/${organizationName}/${providerName}/versions`;
 }
 function GeneratePostProviderPlatformUrl(organizationName, providerName, version) {
-    return `https://app.terraform.io/organizations/${organizationName}/registry-providers/private/${organizationName}/${providerName}/versions/${version}/platforms`;
+    return `https://app.terraform.io/api/v2/organizations/${organizationName}/registry-providers/private/${organizationName}/${providerName}/versions/${version}/platforms`;
 }
 class TerraformClient {
     constructor(organizationName, organizationKey) {
         this.organizationName = organizationName;
-        this.httpClient = new http_client_1.HttpClient('Publish Private Provider Action', [
-            new auth_1.BearerCredentialHandler(organizationKey)
-        ]);
+        this.httpClient = new http_client_1.HttpClient('Publish Private Provider Action', [new auth_1.BearerCredentialHandler(organizationKey)], { headers: { 'Content-Type': 'application/vnd.api+json' } });
     }
     getProvider(providerName) {
         var _a, _b;
