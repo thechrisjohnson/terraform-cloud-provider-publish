@@ -116,7 +116,7 @@ async function run(): Promise<void> {
     const platforms = platformsBuffer.toString()
     for (const line of platforms.split('\n')) {
       const trimmed = line.trim()
-      if (trimmed === undefined) {
+      if (trimmed === undefined || trimmed === '') {
         core.info('Skipping empty line')
         continue
       }
@@ -124,6 +124,7 @@ async function run(): Promise<void> {
       const lineParts = trimmed.split(' ').filter(word => word.trim() !== '')
       if (lineParts.length !== 2) {
         core.info(`Skipping line ${line}`)
+        continue
       }
 
       const shasum = lineParts[0]
@@ -179,6 +180,8 @@ async function run(): Promise<void> {
         )
       }
     }
+
+    core.info(`Successfully published ${providerName} ${providerVersion}`)
   } catch (error) {
     if (error instanceof Error) core.setFailed(error.message)
   }
