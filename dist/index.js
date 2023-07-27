@@ -44,6 +44,7 @@ const path = __importStar(__nccwpck_require__(17));
 const core = __importStar(__nccwpck_require__(186));
 const exec = __importStar(__nccwpck_require__(514));
 const terraform_1 = __nccwpck_require__(620);
+const zip = '.zip';
 function run() {
     var _a, _b;
     return __awaiter(this, void 0, void 0, function* () {
@@ -119,10 +120,12 @@ function run() {
             const platformsBuffer = yield fs.readFile(sumFile);
             const platforms = platformsBuffer.toString();
             for (const line of platforms.split('\n')) {
-                const lineParts = line
-                    .trim()
-                    .split(' ')
-                    .filter(word => word.trim() !== '');
+                const trimmed = line.trim();
+                if (trimmed === undefined) {
+                    core.info('Skipping empty line');
+                    continue;
+                }
+                const lineParts = trimmed.split(' ').filter(word => word.trim() !== '');
                 if (lineParts.length !== 2) {
                     core.info(`Skipping line ${line}`);
                 }
@@ -132,12 +135,14 @@ function run() {
                 if (fileParts.length !== 4 ||
                     fileParts[0] !== providerName ||
                     fileParts[1] !== providerVersion) {
-                    core.debug(`Skipping file ${file}`);
+                    core.info(`Skipping file ${file}`);
                     continue;
                 }
                 const os = fileParts[2];
-                // TODO: Remove the .zip in a better way in the future
-                const arch = fileParts[3].substring(0, fileParts[3].length - 4);
+                let arch = fileParts[3];
+                if (arch.endsWith(zip)) {
+                    arch = arch.substring(0, arch.length - zip.length);
+                }
                 core.info(`Checking to see if platform ${os}_${arch} for ${providerName} ${providerVersion} already exists`);
                 const existingPlatforms = yield tfClient.getAllProviderPlatforms(providerName, providerVersion);
                 let platform = (_b = existingPlatforms.data) === null || _b === void 0 ? void 0 : _b.find(plat => plat.attributes.os === os && plat.attributes.arch === arch);

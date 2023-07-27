@@ -4,6 +4,8 @@ import * as core from '@actions/core'
 import * as exec from '@actions/exec'
 import {TerraformClient, TerraformManifestFile} from './terraform'
 
+const zip = '.zip'
+
 async function run(): Promise<void> {
   try {
     // Load configuration
@@ -113,13 +115,17 @@ async function run(): Promise<void> {
     const platformsBuffer = await fs.readFile(sumFile)
     const platforms = platformsBuffer.toString()
     for (const line of platforms.split('\n')) {
-      const lineParts = line
-        .trim()
-        .split(' ')
-        .filter(word => word.trim() !== '')
+      const trimmed = line.trim()
+      if (trimmed === undefined) {
+        core.info('Skipping empty line')
+        continue
+      }
+
+      const lineParts = trimmed.split(' ').filter(word => word.trim() !== '')
       if (lineParts.length !== 2) {
         core.info(`Skipping line ${line}`)
       }
+
       const shasum = lineParts[0]
       const file = lineParts[1]
 
@@ -129,13 +135,15 @@ async function run(): Promise<void> {
         fileParts[0] !== providerName ||
         fileParts[1] !== providerVersion
       ) {
-        core.debug(`Skipping file ${file}`)
+        core.info(`Skipping file ${file}`)
         continue
       }
 
       const os = fileParts[2]
-      // TODO: Remove the .zip in a better way in the future
-      const arch = fileParts[3].substring(0, fileParts[3].length - 4)
+      let arch = fileParts[3]
+      if (arch.endsWith(zip)) {
+        arch = arch.substring(0, arch.length - zip.length)
+      }
 
       core.info(
         `Checking to see if platform ${os}_${arch} for ${providerName} ${providerVersion} already exists`
