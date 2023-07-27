@@ -121,13 +121,14 @@ function run() {
             const platforms = platformsBuffer.toString();
             for (const line of platforms.split('\n')) {
                 const trimmed = line.trim();
-                if (trimmed === undefined) {
+                if (trimmed === undefined || trimmed === '') {
                     core.info('Skipping empty line');
                     continue;
                 }
                 const lineParts = trimmed.split(' ').filter(word => word.trim() !== '');
                 if (lineParts.length !== 2) {
                     core.info(`Skipping line ${line}`);
+                    continue;
                 }
                 const shasum = lineParts[0];
                 const file = lineParts[1];
@@ -157,6 +158,7 @@ function run() {
                     yield uploadFile(platform.links['provider-binary-upload'], path.join(providerDir, file));
                 }
             }
+            core.info(`Successfully published ${providerName} ${providerVersion}`);
         }
         catch (error) {
             if (error instanceof Error)
