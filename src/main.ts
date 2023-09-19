@@ -10,7 +10,7 @@ async function run(): Promise<void> {
   try {
     // Load configuration
     const organizationName: string = core.getInput('organization-name')
-    const organizationKey: string = core.getInput('organization-key')
+    const organizationKey: string = core.getInput('organization-api-token')
     const providerDirName: string = core.getInput('provider-directory')
     const gpgKey: string = core.getInput('gpg-key')
 
