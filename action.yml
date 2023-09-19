@@ -5,7 +5,7 @@ inputs:
   organization-name:
     required: true
     description: 'name of the terraform cloud organization'
-  organization-key:
+  organization-api-token:
     required: true
     description: 'access key needed to access the organizations registry'
   provider-directory:

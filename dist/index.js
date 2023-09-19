@@ -51,7 +51,7 @@ function run() {
         try {
             // Load configuration
             const organizationName = core.getInput('organization-name');
-            const organizationKey = core.getInput('organization-key');
+            const organizationKey = core.getInput('organization-api-token');
             const providerDirName = core.getInput('provider-directory');
             const gpgKey = core.getInput('gpg-key');
             // Figure out the path for the provider
