@@ -82,7 +82,7 @@ async function run(): Promise<void> {
         providerName,
         providerVersion,
         providerProtocols,
-        signingKey.id
+        signingKey.attributes['key-id']
       )
     }
 

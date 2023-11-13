@@ -97,7 +97,7 @@ function run() {
             let version = yield tfClient.getProviderVersion(providerName, providerVersion);
             if (version == null) {
                 core.info(`Creating new provider version ${providerVersion}`);
-                version = yield tfClient.postProviderVersion(providerName, providerVersion, providerProtocols, signingKey.id);
+                version = yield tfClient.postProviderVersion(providerName, providerVersion, providerProtocols, signingKey.attributes['key-id']);
             }
             // Take the output folder for all of the files and look for a SHA256SUM and SHA256SUM.sig
             const sumFileBase = providerFiles.find(value => value.endsWith('SHA256SUMS'));
