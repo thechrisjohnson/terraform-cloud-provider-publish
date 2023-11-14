@@ -45,6 +45,7 @@ const core = __importStar(__nccwpck_require__(2186));
 const exec = __importStar(__nccwpck_require__(1514));
 const terraform_1 = __nccwpck_require__(3620);
 const zip = '.zip';
+const providerPrefix = 'terraform-provider-';
 function run() {
     var _a, _b;
     return __awaiter(this, void 0, void 0, function* () {
@@ -73,7 +74,10 @@ function run() {
             if (parts.length !== 3) {
                 throw new Error(`Invalid manifest file ${manifestFile}`);
             }
-            const providerName = parts[0];
+            if (!parts[0].startsWith(providerPrefix)) {
+                throw new Error(`Invalid provider file names ${parts[0]}`);
+            }
+            const providerName = parts[0].substring(providerPrefix.length);
             const providerVersion = parts[1];
             // Read the last bit of information from the manifest file
             const manifestRaw = yield fs.readFile(path.join(providerDir, manifestFile));

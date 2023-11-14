@@ -5,6 +5,7 @@ import * as exec from '@actions/exec'
 import {TerraformClient, TerraformManifestFile} from './terraform'
 
 const zip = '.zip'
+const providerPrefix = 'terraform-provider-'
 
 async function run(): Promise<void> {
   try {
@@ -39,7 +40,11 @@ async function run(): Promise<void> {
       throw new Error(`Invalid manifest file ${manifestFile}`)
     }
 
-    const providerName = parts[0]
+    if (!parts[0].startsWith(providerPrefix)) {
+      throw new Error(`Invalid provider file names ${parts[0]}`)
+    }
+
+    const providerName = parts[0].substring(providerPrefix.length)
     const providerVersion = parts[1]
 
     // Read the last bit of information from the manifest file
