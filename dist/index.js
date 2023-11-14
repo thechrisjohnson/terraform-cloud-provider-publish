@@ -138,7 +138,7 @@ function run() {
                 const file = lineParts[1];
                 const fileParts = file.split('_');
                 if (fileParts.length !== 4 ||
-                    fileParts[0] !== providerName ||
+                    fileParts[0] !== providerPrefix.concat(providerName) ||
                     fileParts[1] !== providerVersion) {
                     core.info(`Skipping file ${file}`);
                     continue;
