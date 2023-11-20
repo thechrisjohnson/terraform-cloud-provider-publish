@@ -14,7 +14,7 @@ An example use of the action:
 ```
 -
     name: Publish provider
-    uses: thechrisjohnson/terraform-cloud-provider-publish@1e5c4389333968251ae8b16fe62c4116b5da22a7 # v1.0
+    uses: thechrisjohnson/terraform-cloud-provider-publish@9c741f7c267fd8c1049089dbcc788eb83a1b0b69 # v1.3
     with:
         organization-name: terraform-organization
         organization-api-token: ${{ secrets.TF_CLOUD_TOKEN }}
