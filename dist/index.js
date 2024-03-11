@@ -47,8 +47,8 @@ const terraform_1 = __nccwpck_require__(3620);
 const zip = '.zip';
 const providerPrefix = 'terraform-provider-';
 function run() {
-    var _a, _b;
     return __awaiter(this, void 0, void 0, function* () {
+        var _a, _b;
         try {
             // Load configuration
             const organizationName = core.getInput('organization-name');
@@ -235,8 +235,8 @@ class TerraformClient {
         this.httpClient = new http_client_1.HttpClient('Publish Private Provider Action', [new auth_1.BearerCredentialHandler(organizationKey)], { headers: { 'Content-Type': 'application/vnd.api+json' } });
     }
     getProvider(providerName) {
-        var _a, _b;
         return __awaiter(this, void 0, void 0, function* () {
+            var _a, _b;
             const response = yield this.httpClient.getJson(GenerateGetProviderUrl(this.organizationName, providerName));
             return (_b = (_a = response.result) === null || _a === void 0 ? void 0 : _a.data) !== null && _b !== void 0 ? _b : null;
         });
@@ -288,8 +288,8 @@ class TerraformClient {
         });
     }
     getProviderVersion(providerName, version) {
-        var _a, _b;
         return __awaiter(this, void 0, void 0, function* () {
+            var _a, _b;
             const response = yield this.httpClient.getJson(GenerateGetProviderVersionUrl(this.organizationName, providerName, version));
             return (_b = (_a = response.result) === null || _a === void 0 ? void 0 : _a.data) !== null && _b !== void 0 ? _b : null;
         });
