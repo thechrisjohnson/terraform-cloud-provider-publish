@@ -6,6 +6,7 @@ import {TerraformClient, TerraformManifestFile} from './terraform'
 
 const zip = '.zip'
 const providerPrefix = 'terraform-provider-'
+const fileRegex = /^(?<provider>[a-zA-Z0-9-]+)_(?<version>[a-zA-Z0-9-.]+)_(?<os>[a-zA-Z0-9-]+)_(?<arch>[a-zA-Z0-9-]+)\.(?<extension>[a-zA-Z0-9-.]+)$/
 
 async function run(): Promise<void> {
   try {
@@ -135,20 +136,27 @@ async function run(): Promise<void> {
       const shasum = lineParts[0]
       const file = lineParts[1]
 
-      const fileParts = file.split('_')
-      if (
-        fileParts.length !== 4 ||
-        fileParts[0] !== providerPrefix.concat(providerName) ||
-        fileParts[1] !== providerVersion
-      ) {
-        core.info(`Skipping file ${file}`)
+      
+      const match = fileRegex.exec(file)
+      if (match === null) {
+        core.info(`Skipping file ${file}, did not match regex ${fileRegex}`)
         continue
       }
 
-      const os = fileParts[2]
-      let arch = fileParts[3]
-      if (arch.endsWith(zip)) {
-        arch = arch.substring(0, arch.length - zip.length)
+      const {provider, version, os, arch, extension} = match?.groups as { 
+        readonly provider: string; 
+        readonly version: string;
+        readonly os: string;
+        readonly arch: string;
+        readonly extension: string;
+      };
+      if (
+        provider !== providerPrefix.concat(providerName) ||
+        version !== providerVersion ||
+        extension !== "zip"
+      ) {
+        core.info(`Skipping file ${file}`)
+        continue
       }
 
       core.info(
