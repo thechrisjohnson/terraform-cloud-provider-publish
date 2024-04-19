@@ -4,9 +4,9 @@ import * as core from '@actions/core'
 import * as exec from '@actions/exec'
 import {TerraformClient, TerraformManifestFile} from './terraform'
 
-const zip = '.zip'
 const providerPrefix = 'terraform-provider-'
-const fileRegex = /^(?<provider>[a-zA-Z0-9-]+)_(?<version>[a-zA-Z0-9-.]+)_(?<os>[a-zA-Z0-9-]+)_(?<arch>[a-zA-Z0-9-]+)\.(?<extension>[a-zA-Z0-9-.]+)$/
+const fileRegex =
+  /^(?<provider>[a-zA-Z0-9-]+)_(?<version>[a-zA-Z0-9-.]+)_(?<os>[a-zA-Z0-9-]+)_(?<arch>[a-zA-Z0-9-]+)\.(?<extension>[a-zA-Z0-9-.]+)$/
 
 async function run(): Promise<void> {
   try {
@@ -57,12 +57,12 @@ async function run(): Promise<void> {
     core.info(
       `Checking to see if provider ${organizationName}/${providerName} already exists...`
     )
-    let provider = await tfClient.getProvider(providerName)
-    if (provider == null) {
+    let tfProvider = await tfClient.getProvider(providerName)
+    if (tfProvider == null) {
       core.info(
         `Provider did not exist, creating ${organizationName}/${providerName}...`
       )
-      provider = await tfClient.postProvider(providerName)
+      tfProvider = await tfClient.postProvider(providerName)
     }
 
     core.info(`Checking to see if gpg key exists...`)
@@ -78,13 +78,13 @@ async function run(): Promise<void> {
     core.info(
       `Checking to see if provider version ${providerVersion} exists...`
     )
-    let version = await tfClient.getProviderVersion(
+    let tfVersion = await tfClient.getProviderVersion(
       providerName,
       providerVersion
     )
-    if (version == null) {
+    if (tfVersion == null) {
       core.info(`Creating new provider version ${providerVersion}`)
-      version = await tfClient.postProviderVersion(
+      tfVersion = await tfClient.postProviderVersion(
         providerName,
         providerVersion,
         providerProtocols,
@@ -108,13 +108,13 @@ async function run(): Promise<void> {
 
     // If we need to upload the signature or sum files, do that
     core.info(`Checking if we need to upload sha256 file...`)
-    if (version.attributes['shasums-uploaded'] === false) {
-      await uploadFile(version.links['shasums-upload'], sumFile)
+    if (tfVersion.attributes['shasums-uploaded'] === false) {
+      await uploadFile(tfVersion.links['shasums-upload'], sumFile)
     }
 
     core.info(`Checking if we need to upload sig file...`)
-    if (version.attributes['shasums-sig-uploaded'] === false) {
-      await uploadFile(version.links['shasums-sig-upload'], signatureFile)
+    if (tfVersion.attributes['shasums-sig-uploaded'] === false) {
+      await uploadFile(tfVersion.links['shasums-sig-upload'], signatureFile)
     }
 
     // Read the shasums file and upload platforms based on that
@@ -136,24 +136,23 @@ async function run(): Promise<void> {
       const shasum = lineParts[0]
       const file = lineParts[1]
 
-      
       const match = fileRegex.exec(file)
       if (match === null) {
         core.info(`Skipping file ${file}, did not match regex ${fileRegex}`)
         continue
       }
 
-      const {provider, version, os, arch, extension} = match?.groups as { 
-        readonly provider: string; 
-        readonly version: string;
-        readonly os: string;
-        readonly arch: string;
-        readonly extension: string;
-      };
+      const {provider, version, os, arch, extension} = match?.groups as {
+        readonly provider: string
+        readonly version: string
+        readonly os: string
+        readonly arch: string
+        readonly extension: string
+      }
       if (
         provider !== providerPrefix.concat(providerName) ||
         version !== providerVersion ||
-        extension !== "zip"
+        extension !== 'zip'
       ) {
         core.info(`Skipping file ${file}`)
         continue

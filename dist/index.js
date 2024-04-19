@@ -35,7 +35,6 @@ const path = __importStar(__nccwpck_require__(1017));
 const core = __importStar(__nccwpck_require__(2186));
 const exec = __importStar(__nccwpck_require__(1514));
 const terraform_1 = __nccwpck_require__(3620);
-const zip = '.zip';
 const providerPrefix = 'terraform-provider-';
 const fileRegex = /^(?<provider>[a-zA-Z0-9-]+)_(?<version>[a-zA-Z0-9-.]+)_(?<os>[a-zA-Z0-9-]+)_(?<arch>[a-zA-Z0-9-]+)\.(?<extension>[a-zA-Z0-9-.]+)$/;
 async function run() {
@@ -76,10 +75,10 @@ async function run() {
         const providerProtocols = manifest.metadata.protocol_versions;
         // Now that we have the values we need, create everything
         core.info(`Checking to see if provider ${organizationName}/${providerName} already exists...`);
-        let provider = await tfClient.getProvider(providerName);
-        if (provider == null) {
+        let tfProvider = await tfClient.getProvider(providerName);
+        if (tfProvider == null) {
             core.info(`Provider did not exist, creating ${organizationName}/${providerName}...`);
-            provider = await tfClient.postProvider(providerName);
+            tfProvider = await tfClient.postProvider(providerName);
         }
         core.info(`Checking to see if gpg key exists...`);
         const existingKeys = await tfClient.getAllSigningKeys();
@@ -89,10 +88,10 @@ async function run() {
             signingKey = await tfClient.postSingingKey(gpgKey);
         }
         core.info(`Checking to see if provider version ${providerVersion} exists...`);
-        let version = await tfClient.getProviderVersion(providerName, providerVersion);
-        if (version == null) {
+        let tfVersion = await tfClient.getProviderVersion(providerName, providerVersion);
+        if (tfVersion == null) {
             core.info(`Creating new provider version ${providerVersion}`);
-            version = await tfClient.postProviderVersion(providerName, providerVersion, providerProtocols, signingKey.attributes['key-id']);
+            tfVersion = await tfClient.postProviderVersion(providerName, providerVersion, providerProtocols, signingKey.attributes['key-id']);
         }
         // Take the output folder for all of the files and look for a SHA256SUM and SHA256SUM.sig
         const sumFileBase = providerFiles.find(value => value.endsWith('SHA256SUMS'));
@@ -104,12 +103,12 @@ async function run() {
         const signatureFile = path.join(providerDir, signatureFileBase);
         // If we need to upload the signature or sum files, do that
         core.info(`Checking if we need to upload sha256 file...`);
-        if (version.attributes['shasums-uploaded'] === false) {
-            await uploadFile(version.links['shasums-upload'], sumFile);
+        if (tfVersion.attributes['shasums-uploaded'] === false) {
+            await uploadFile(tfVersion.links['shasums-upload'], sumFile);
         }
         core.info(`Checking if we need to upload sig file...`);
-        if (version.attributes['shasums-sig-uploaded'] === false) {
-            await uploadFile(version.links['shasums-sig-upload'], signatureFile);
+        if (tfVersion.attributes['shasums-sig-uploaded'] === false) {
+            await uploadFile(tfVersion.links['shasums-sig-upload'], signatureFile);
         }
         // Read the shasums file and upload platforms based on that
         const platformsBuffer = await fs.readFile(sumFile);
@@ -135,7 +134,7 @@ async function run() {
             const { provider, version, os, arch, extension } = match === null || match === void 0 ? void 0 : match.groups;
             if (provider !== providerPrefix.concat(providerName) ||
                 version !== providerVersion ||
-                extension !== "zip") {
+                extension !== 'zip') {
                 core.info(`Skipping file ${file}`);
                 continue;
             }
