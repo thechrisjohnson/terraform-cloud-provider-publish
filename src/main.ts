@@ -22,21 +22,23 @@ async function run(): Promise<void> {
       throw new Error('$GITHUB_WORKSPACE not defined')
     }
     githubWorkspacePath = path.resolve(githubWorkspacePath)
+    const workspaceDir = path.resolve(githubWorkspacePath)
     const providerDir = path.resolve(githubWorkspacePath, providerDirName)
 
     // Create the terraform client
     const tfClient = new TerraformClient(organizationName, organizationKey)
 
+    const workspaceFiles =  await fs.readdir(workspaceDir)
+
     // Find the *manifest.json file, and calculate the required values from there
-    const providerFiles = await fs.readdir(providerDir)
-    const manifestFile = providerFiles.find(value =>
+    const manifestFile = workspaceFiles.find(value =>
       value.endsWith('manifest.json')
     )
     if (manifestFile === undefined) {
-      throw new Error(`Unable to find manifest file in ${providerDir}`)
+      throw new Error(`Unable to find manifest file in ${workspaceDir}`)
     }
 
-    const parts = manifestFile.split('_')
+    const parts = manifestFile.split('-')
     if (parts.length !== 3) {
       throw new Error(`Invalid manifest file ${manifestFile}`)
     }
@@ -91,6 +93,8 @@ async function run(): Promise<void> {
         signingKey.attributes['key-id']
       )
     }
+
+    const providerFiles = await fs.readdir(providerDir)
 
     // Take the output folder for all of the files and look for a SHA256SUM and SHA256SUM.sig
     const sumFileBase = providerFiles.find(value =>
