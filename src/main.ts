@@ -2,7 +2,11 @@ import * as fs from 'fs/promises'
 import * as path from 'path'
 import * as core from '@actions/core'
 import * as exec from '@actions/exec'
-import {TerraformClient, TerraformManifestFile} from './terraform'
+import {
+  TerraformClient,
+  TerraformManifestFile,
+  TerraformMetadataFile
+} from './terraform'
 
 const providerPrefix = 'terraform-provider-'
 const fileRegex =
@@ -27,31 +31,57 @@ async function run(): Promise<void> {
     // Create the terraform client
     const tfClient = new TerraformClient(organizationName, organizationKey)
 
-    // Find the *manifest.json file, and calculate the required values from there
+    // Find the *manifest.json file if we can, and calculate the required values from there
+    let providerName: string
+    let providerVersion: string
+    let providerProtocols: string[]
+
     const providerFiles = await fs.readdir(providerDir)
     const manifestFile = providerFiles.find(value =>
       value.endsWith('manifest.json')
     )
+
     if (manifestFile === undefined) {
-      throw new Error(`Unable to find manifest file in ${providerDir}`)
+      // We couldn't locate the manifest file to base this on
+      // Try looking for a metadata.json file
+      const metadataFile = providerFiles.find(
+        value => value === 'metadata.json'
+      )
+
+      if (metadataFile === undefined) {
+        throw new Error(
+          `Unable to find manifest or metadata file in ${providerDir}`
+        )
+      }
+
+      const metadataRaw = await fs.readFile(
+        path.join(providerDir, metadataFile)
+      )
+      const metadata: TerraformMetadataFile = JSON.parse(metadataRaw.toString())
+
+      providerName = metadata.project_name
+      providerVersion = metadata.version
+      providerProtocols = ['5.0']
+    } else {
+      const parts = manifestFile.split('_')
+      if (parts.length !== 3) {
+        throw new Error(`Invalid manifest file ${manifestFile}`)
+      }
+
+      if (!parts[0].startsWith(providerPrefix)) {
+        throw new Error(`Invalid provider file names ${parts[0]}`)
+      }
+
+      providerName = parts[0].substring(providerPrefix.length)
+      providerVersion = parts[1]
+
+      // Read the last bit of information from the manifest file
+      const manifestRaw = await fs.readFile(
+        path.join(providerDir, manifestFile)
+      )
+      const manifest: TerraformManifestFile = JSON.parse(manifestRaw.toString())
+      providerProtocols = manifest.metadata.protocol_versions
     }
-
-    const parts = manifestFile.split('_')
-    if (parts.length !== 3) {
-      throw new Error(`Invalid manifest file ${manifestFile}`)
-    }
-
-    if (!parts[0].startsWith(providerPrefix)) {
-      throw new Error(`Invalid provider file names ${parts[0]}`)
-    }
-
-    const providerName = parts[0].substring(providerPrefix.length)
-    const providerVersion = parts[1]
-
-    // Read the last bit of information from the manifest file
-    const manifestRaw = await fs.readFile(path.join(providerDir, manifestFile))
-    const manifest: TerraformManifestFile = JSON.parse(manifestRaw.toString())
-    const providerProtocols = manifest.metadata.protocol_versions
 
     // Now that we have the values we need, create everything
     core.info(
