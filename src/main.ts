@@ -59,9 +59,31 @@ async function run(): Promise<void> {
       )
       const metadata: TerraformMetadataFile = JSON.parse(metadataRaw.toString())
 
-      providerName = metadata.project_name
+      if (!metadata.project_name.startsWith(providerPrefix)) {
+        throw new Error(`Invalid provider file names ${metadata.project_name}`)
+      }
+
+      providerName = metadata.project_name.substring(providerPrefix.length)
       providerVersion = metadata.version
-      providerProtocols = ['5.0']
+
+      const repositoryRootDir = githubWorkspacePath
+      const repositoryRootFiles = await fs.readdir(repositoryRootDir)
+      const manifestFile = repositoryRootFiles.find(
+        value => value === 'terraform-registry-manifest.json'
+      )
+
+      if (manifestFile === undefined) {
+        throw new Error(
+          `Unable to find terraform-registry-manifest.json file in ${repositoryRootDir}`
+        )
+      }
+
+      const manifestRaw = await fs.readFile(
+        path.join(repositoryRootDir, manifestFile)
+      )
+      const manifest: TerraformManifestFile = JSON.parse(manifestRaw.toString())
+
+      providerProtocols = manifest.metadata.protocol_versions
     } else {
       const parts = manifestFile.split('_')
       if (parts.length !== 3) {
