@@ -79,9 +79,20 @@ async function run() {
             }
             const metadataRaw = await fs.readFile(path.join(providerDir, metadataFile));
             const metadata = JSON.parse(metadataRaw.toString());
-            providerName = metadata.project_name;
+            if (!metadata.project_name.startsWith(providerPrefix)) {
+                throw new Error(`Invalid provider file names ${metadata.project_name}`);
+            }
+            providerName = metadata.project_name.substring(providerPrefix.length);
             providerVersion = metadata.version;
-            providerProtocols = ['5.0'];
+            const repositoryRootDir = githubWorkspacePath;
+            const repositoryRootFiles = await fs.readdir(repositoryRootDir);
+            const manifestFile = repositoryRootFiles.find(value => value === 'terraform-registry-manifest.json');
+            if (manifestFile === undefined) {
+                throw new Error(`Unable to find terraform-registry-manifest.json file in ${repositoryRootDir}`);
+            }
+            const manifestRaw = await fs.readFile(path.join(repositoryRootDir, manifestFile));
+            const manifest = JSON.parse(manifestRaw.toString());
+            providerProtocols = manifest.metadata.protocol_versions;
         }
         else {
             const parts = manifestFile.split('_');
