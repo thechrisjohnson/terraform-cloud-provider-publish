@@ -76,7 +76,7 @@ export class TerraformClient {
       DataWrappedValue<TerraformProvider>
     >(GeneratePostProviderUrl(this.organizationName), body)
     if (response.result == null) {
-      throw new Error(`Invalid reponse code: ${response.statusCode}`)
+      throw new Error(`Invalid response code: ${response.statusCode}`)
     }
 
     return response.result.data
