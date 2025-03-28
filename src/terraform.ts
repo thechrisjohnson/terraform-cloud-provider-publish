@@ -344,3 +344,8 @@ export interface TerraformManifestFile {
 export interface TerraformManifestFileMetadata {
   protocol_versions: string[]
 }
+
+export interface TerraformMetadataFile {
+  version: string
+  project_name: string
+}
