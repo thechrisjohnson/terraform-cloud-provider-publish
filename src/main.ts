@@ -21,12 +21,12 @@ async function run(): Promise<void> {
     const gpgKey: string = core.getInput('gpg-key')
 
     // Figure out the path for the provider
-    let githubWorkspacePath = process.env['GITHUB_WORKSPACE']
-    if (!githubWorkspacePath) {
+    let repositoryRootDir = process.env['GITHUB_WORKSPACE']
+    if (!repositoryRootDir) {
       throw new Error('$GITHUB_WORKSPACE not defined')
     }
-    githubWorkspacePath = path.resolve(githubWorkspacePath)
-    const providerDir = path.resolve(githubWorkspacePath, providerDirName)
+    repositoryRootDir = path.resolve(repositoryRootDir)
+    const providerDir = path.resolve(repositoryRootDir, providerDirName)
 
     // Create the terraform client
     const tfClient = new TerraformClient(organizationName, organizationKey)
@@ -66,20 +66,19 @@ async function run(): Promise<void> {
       providerName = metadata.project_name.substring(providerPrefix.length)
       providerVersion = metadata.version
 
-      const repositoryRootDir = githubWorkspacePath
       const repositoryRootFiles = await fs.readdir(repositoryRootDir)
-      const manifestFile = repositoryRootFiles.find(
+      const registryManifestFile = repositoryRootFiles.find(
         value => value === 'terraform-registry-manifest.json'
       )
 
-      if (manifestFile === undefined) {
+      if (registryManifestFile === undefined) {
         throw new Error(
           `Unable to find terraform-registry-manifest.json file in ${repositoryRootDir}`
         )
       }
 
       const manifestRaw = await fs.readFile(
-        path.join(repositoryRootDir, manifestFile)
+        path.join(repositoryRootDir, registryManifestFile)
       )
       const manifest: TerraformManifestFile = JSON.parse(manifestRaw.toString())
 

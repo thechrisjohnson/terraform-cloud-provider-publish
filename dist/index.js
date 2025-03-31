@@ -56,12 +56,12 @@ async function run() {
         const providerDirName = core.getInput('provider-directory');
         const gpgKey = core.getInput('gpg-key');
         // Figure out the path for the provider
-        let githubWorkspacePath = process.env['GITHUB_WORKSPACE'];
-        if (!githubWorkspacePath) {
+        let repositoryRootDir = process.env['GITHUB_WORKSPACE'];
+        if (!repositoryRootDir) {
             throw new Error('$GITHUB_WORKSPACE not defined');
         }
-        githubWorkspacePath = path.resolve(githubWorkspacePath);
-        const providerDir = path.resolve(githubWorkspacePath, providerDirName);
+        repositoryRootDir = path.resolve(repositoryRootDir);
+        const providerDir = path.resolve(repositoryRootDir, providerDirName);
         // Create the terraform client
         const tfClient = new terraform_1.TerraformClient(organizationName, organizationKey);
         // Find the *manifest.json file if we can, and calculate the required values from there
@@ -84,13 +84,12 @@ async function run() {
             }
             providerName = metadata.project_name.substring(providerPrefix.length);
             providerVersion = metadata.version;
-            const repositoryRootDir = githubWorkspacePath;
             const repositoryRootFiles = await fs.readdir(repositoryRootDir);
-            const manifestFile = repositoryRootFiles.find(value => value === 'terraform-registry-manifest.json');
-            if (manifestFile === undefined) {
+            const registryManifestFile = repositoryRootFiles.find(value => value === 'terraform-registry-manifest.json');
+            if (registryManifestFile === undefined) {
                 throw new Error(`Unable to find terraform-registry-manifest.json file in ${repositoryRootDir}`);
             }
-            const manifestRaw = await fs.readFile(path.join(repositoryRootDir, manifestFile));
+            const manifestRaw = await fs.readFile(path.join(repositoryRootDir, registryManifestFile));
             const manifest = JSON.parse(manifestRaw.toString());
             providerProtocols = manifest.metadata.protocol_versions;
         }
@@ -266,7 +265,7 @@ class TerraformClient {
         };
         const response = await this.httpClient.postJson(GeneratePostProviderUrl(this.organizationName), body);
         if (response.result == null) {
-            throw new Error(`Invalid reponse code: ${response.statusCode}`);
+            throw new Error(`Invalid response code: ${response.statusCode}`);
         }
         return response.result.data;
     }
